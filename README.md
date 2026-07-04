@@ -93,6 +93,16 @@ server {
 
 A pasta `src/modules` separa os dominios principais. Integracoes reais ainda nao foram implementadas; cada modulo possui um placeholder para manter a estrutura preparada.
 
+## Documentacao
+
+A documentacao inicial de arquitetura esta em `docs/`:
+
+- [Arquitetura geral](docs/01-arquitetura-geral.md)
+- [Infraestrutura](docs/02-infraestrutura.md)
+- [Integracoes](docs/03-integracoes.md)
+- [Processos](docs/04-processos.md)
+- [ADR-001: Arquitetura base](docs/adr/ADR-001-arquitetura-base.md)
+
 Fluxo base:
 
 - `src/server.ts`: ponto de entrada do processo.
