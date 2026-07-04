@@ -102,6 +102,7 @@ A documentacao inicial de arquitetura esta em `docs/`:
 - [Integracoes](docs/03-integracoes.md)
 - [Processos](docs/04-processos.md)
 - [ADR-001: Arquitetura base](docs/adr/ADR-001-arquitetura-base.md)
+- [ADR-002: Centro de Integracoes](docs/adr/ADR-002-centro-integracoes.md)
 
 Fluxo base:
 

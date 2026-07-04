@@ -1,6 +1,7 @@
 import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
 import { env } from "./config/env";
+import { registerIntegrationRoutes } from "./modules/integrations/routes";
 import { registerHealthRoutes } from "./routes/health";
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -20,6 +21,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   }));
 
   await app.register(registerHealthRoutes);
+  await app.register(registerIntegrationRoutes);
 
   return app;
 }

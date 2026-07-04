@@ -6,3 +6,43 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum IntegrationProvider {
+  shopee
+  mercadolivre
+  tiny
+  googledrive
+  cloudinary
+  supabase
+}
+
+enum IntegrationStatus {
+  disabled
+  pending
+  connected
+  error
+}
+
+enum IntegrationAuthType {
+  oauth
+  api_key
+  internal
+  manual
+}
+
+model IntegrationConfig {
+  id              String              @id @default(uuid()) @db.Uuid
+  provider        IntegrationProvider @unique
+  displayName     String
+  status          IntegrationStatus   @default(pending)
+  authType        IntegrationAuthType
+  credentialsJson Json?
+  settingsJson    Json?
+  lastConnectedAt DateTime?
+  lastSyncAt      DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([status])
+  @@map("integration_configs")
+}
