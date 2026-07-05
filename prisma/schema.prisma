@@ -46,3 +46,17 @@ model IntegrationConfig {
   @@index([status])
   @@map("integration_configs")
 }
+
+model IntegrationLog {
+  id           String              @id @default(uuid()) @db.Uuid
+  provider     IntegrationProvider
+  action       String
+  status       String
+  message      String
+  metadataJson Json?
+  createdAt    DateTime            @default(now())
+
+  @@index([provider, createdAt])
+  @@index([createdAt])
+  @@map("integration_logs")
+}

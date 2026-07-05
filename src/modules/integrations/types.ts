@@ -30,6 +30,29 @@ export type IntegrationConfigView = {
   updatedAt: Date | null;
 };
 
+export type IntegrationStatusView = Pick<
+  IntegrationConfigView,
+  | "provider"
+  | "displayName"
+  | "status"
+  | "authType"
+  | "hasCredentials"
+  | "credentialKeys"
+  | "lastConnectedAt"
+  | "lastSyncAt"
+  | "updatedAt"
+>;
+
+export type IntegrationLogView = {
+  id: string;
+  provider: IntegrationProvider;
+  action: string;
+  status: string;
+  message: string;
+  metadataJson: unknown;
+  createdAt: Date;
+};
+
 export const defaultIntegrationConfigs: Record<
   IntegrationProvider,
   {

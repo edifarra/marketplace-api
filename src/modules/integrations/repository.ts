@@ -3,6 +3,7 @@ import { prisma } from "../../services/prisma";
 import {
   defaultIntegrationConfigs,
   type IntegrationConfigView,
+  type IntegrationLogView,
   type IntegrationProvider
 } from "./types";
 import type { UpdateIntegrationInput } from "./schemas";
@@ -19,6 +20,16 @@ type IntegrationConfigRecord = {
   lastSyncAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+};
+
+type IntegrationLogRecord = {
+  id: string;
+  provider: IntegrationProvider;
+  action: string;
+  status: string;
+  message: string;
+  metadataJson: unknown;
+  createdAt: Date;
 };
 
 export async function listIntegrationConfigs(): Promise<IntegrationConfigView[]> {
@@ -60,15 +71,24 @@ export async function upsertIntegrationConfig(
   input: UpdateIntegrationInput
 ): Promise<IntegrationConfigView> {
   const defaults = defaultIntegrationConfigs[provider];
-  const data = {
+  const createData = {
     displayName: input.displayName ?? defaults.displayName,
     status: input.status ?? defaults.status,
     authType: input.authType ?? defaults.authType,
-    credentialsJson: input.credentialsJson
-      ? toPrismaJson(input.credentialsJson)
-      : undefined,
+    credentialsJson: toPrismaJson(input.credentialsJson ?? {}),
     settingsJson: toPrismaJson(input.settingsJson ?? defaults.settingsJson)
   };
+  const updateData = compactUndefined({
+    displayName: input.displayName,
+    status: input.status,
+    authType: input.authType,
+    credentialsJson: input.credentialsJson === undefined
+      ? undefined
+      : toPrismaJson(input.credentialsJson),
+    settingsJson: input.settingsJson === undefined
+      ? undefined
+      : toPrismaJson(input.settingsJson)
+  });
 
   const row = (await prisma.integrationConfig.upsert({
     where: {
@@ -76,12 +96,86 @@ export async function upsertIntegrationConfig(
     },
     create: {
       provider,
-      ...data
+      ...createData
     },
-    update: compactUndefined(data)
+    update: updateData
   })) as IntegrationConfigRecord;
 
   return toIntegrationConfigView(row);
+}
+
+export async function listIntegrationLogs(
+  provider?: IntegrationProvider
+): Promise<IntegrationLogView[]> {
+  const rows = provider
+    ? await prisma.$queryRaw<IntegrationLogRecord[]>`
+        SELECT
+          "id",
+          "provider",
+          "action",
+          "status",
+          "message",
+          "metadataJson",
+          "createdAt"
+        FROM "integration_logs"
+        WHERE "provider" = ${provider}::"IntegrationProvider"
+        ORDER BY "createdAt" DESC
+        LIMIT 100
+      `
+    : await prisma.$queryRaw<IntegrationLogRecord[]>`
+        SELECT
+          "id",
+          "provider",
+          "action",
+          "status",
+          "message",
+          "metadataJson",
+          "createdAt"
+        FROM "integration_logs"
+        ORDER BY "createdAt" DESC
+        LIMIT 100
+      `;
+
+  return rows.map(toIntegrationLogView);
+}
+
+export async function createIntegrationLog(input: {
+  provider: IntegrationProvider;
+  action: string;
+  status: string;
+  message: string;
+  metadataJson?: Record<string, unknown>;
+}): Promise<IntegrationLogView> {
+  const [row] = await prisma.$queryRaw<IntegrationLogRecord[]>`
+    INSERT INTO "integration_logs" (
+      "provider",
+      "action",
+      "status",
+      "message",
+      "metadataJson"
+    )
+    VALUES (
+      ${input.provider}::"IntegrationProvider",
+      ${input.action},
+      ${input.status},
+      ${input.message},
+      ${toPrismaJson(input.metadataJson ?? {})}
+    )
+    RETURNING
+      "id",
+      "provider",
+      "action",
+      "status",
+      "message",
+      "metadataJson",
+      "createdAt"
+  `;
+
+  if (!row) {
+    throw new Error("Integration log was not created.");
+  }
+
+  return toIntegrationLogView(row);
 }
 
 export function listDefaultIntegrationConfigViews(): IntegrationConfigView[] {
@@ -142,6 +236,18 @@ function toIntegrationConfigView(row: IntegrationConfigRecord): IntegrationConfi
     lastSyncAt: row.lastSyncAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt
+  };
+}
+
+function toIntegrationLogView(row: IntegrationLogRecord): IntegrationLogView {
+  return {
+    id: row.id,
+    provider: row.provider,
+    action: row.action,
+    status: row.status,
+    message: row.message,
+    metadataJson: row.metadataJson ?? {},
+    createdAt: row.createdAt
   };
 }
 

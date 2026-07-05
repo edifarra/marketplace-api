@@ -5,9 +5,11 @@ import {
 } from "./schemas";
 import {
   getIntegration,
+  getIntegrationStatus,
   IntegrationStorageUnavailableError,
   isIntegrationProvider,
   listIntegrations,
+  listLogs,
   testIntegration,
   updateIntegration
 } from "./service";
@@ -16,6 +18,46 @@ export async function registerIntegrationRoutes(app: FastifyInstance) {
   app.get("/integrations", async (_request, reply) => {
     try {
       return await listIntegrations();
+    } catch (error) {
+      return handleIntegrationRouteError(reply, error);
+    }
+  });
+
+  app.get("/integrations/logs", async (_request, reply) => {
+    try {
+      return await listLogs();
+    } catch (error) {
+      return handleIntegrationRouteError(reply, error);
+    }
+  });
+
+  app.get("/integrations/:provider/status", async (request, reply) => {
+    const params = rawProviderParamSchema.parse(request.params);
+    if (!isIntegrationProvider(params.provider)) {
+      return reply.status(404).send({
+        error: "integration_provider_not_found",
+        message: `Provider nao configuravel: ${params.provider}`
+      });
+    }
+
+    try {
+      return await getIntegrationStatus(params.provider);
+    } catch (error) {
+      return handleIntegrationRouteError(reply, error);
+    }
+  });
+
+  app.get("/integrations/:provider/logs", async (request, reply) => {
+    const params = rawProviderParamSchema.parse(request.params);
+    if (!isIntegrationProvider(params.provider)) {
+      return reply.status(404).send({
+        error: "integration_provider_not_found",
+        message: `Provider nao configuravel: ${params.provider}`
+      });
+    }
+
+    try {
+      return await listLogs(params.provider);
     } catch (error) {
       return handleIntegrationRouteError(reply, error);
     }

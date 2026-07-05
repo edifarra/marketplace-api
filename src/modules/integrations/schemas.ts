@@ -15,6 +15,6 @@ export const updateIntegrationSchema = z.object({
   authType: z.enum(integrationAuthTypes).optional(),
   credentialsJson: z.record(z.unknown()).optional(),
   settingsJson: z.record(z.unknown()).optional()
-});
+}).strict();
 
 export type UpdateIntegrationInput = z.infer<typeof updateIntegrationSchema>;

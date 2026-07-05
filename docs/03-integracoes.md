@@ -48,6 +48,18 @@ Campos principais:
 - `createdAt`
 - `updatedAt`
 
+O modulo tambem possui `IntegrationLog` para auditoria basica das operacoes controladas.
+
+Campos principais:
+
+- `id`
+- `provider`
+- `action`
+- `status`
+- `message`
+- `metadataJson`
+- `createdAt`
+
 Providers configuraveis inicialmente:
 
 - `shopee`
@@ -88,18 +100,50 @@ Tipos de autenticacao:
 - `internal`
 - `manual`
 
-### Rotas iniciais
+### Rotas
 
-As rotas iniciais do modulo sao:
+As rotas do modulo sao:
 
 - `GET /integrations`
+- `GET /integrations/logs`
 - `GET /integrations/:provider`
+- `GET /integrations/:provider/status`
+- `GET /integrations/:provider/logs`
 - `POST /integrations/:provider/test`
 - `PATCH /integrations/:provider`
 
-O endpoint de teste ainda nao executa conexao real. Ele retorna uma resposta controlada indicando que o teste ainda nao foi implementado.
+`PATCH /integrations/:provider` permite atualizar `displayName`, `status`, `authType`, `settingsJson` e `credentialsJson`. O `provider` vem sempre da URL e nao pode ser alterado pelo corpo da requisicao.
+
+`GET /integrations/:provider/status` retorna uma visao consolidada e segura com:
+
+- `provider`
+- `displayName`
+- `status`
+- `authType`
+- `hasCredentials`
+- `credentialKeys`
+- `lastConnectedAt`
+- `lastSyncAt`
+- `updatedAt`
+
+`GET /integrations/logs` retorna os logs mais recentes de todas as integracoes. `GET /integrations/:provider/logs` retorna apenas os logs do provider informado.
+
+O endpoint de teste ainda nao executa conexao real com APIs externas. Ele retorna uma resposta controlada e especifica por provider:
+
+- Shopee: teste real ainda nao implementado;
+- Mercado Livre: teste real ainda nao implementado;
+- Tiny: teste real ainda nao implementado;
+- Google Drive: teste real ainda nao implementado;
+- Cloudinary: teste real ainda nao implementado;
+- Supabase: consulta `IntegrationConfig` para confirmar que o banco esta acessivel.
 
 As respostas publicas nao devem expor `credentialsJson` integralmente. A API pode informar apenas se existem credenciais e quais chaves foram cadastradas.
+
+O modulo registra logs quando:
+
+- uma integracao e atualizada;
+- um teste de conexao e executado;
+- ocorre um erro controlado em operacoes do Centro de Integracoes.
 
 ### Fallback local em desenvolvimento
 
