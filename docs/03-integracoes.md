@@ -57,6 +57,23 @@ Providers configuraveis inicialmente:
 - `cloudinary`
 - `supabase`
 
+### Seed automatico inicial
+
+Quando o banco esta disponivel, as leituras do Centro de Integracoes garantem automaticamente que os providers padrao existam na tabela `integration_configs`.
+
+Na primeira chamada a `GET /integrations`, se a tabela estiver vazia, a API cria os registros iniciais para:
+
+- `shopee`
+- `mercadolivre`
+- `tiny`
+- `googledrive`
+- `cloudinary`
+- `supabase`
+
+Cada registro inicial e persistido com `status` igual a `pending`, `authType` conforme o provider, `credentialsJson` vazio e `settingsJson` vazio. A operacao e idempotente: chamadas seguintes nao duplicam providers porque `provider` e unico no banco.
+
+Depois desse seed, `GET /integrations` e `GET /integrations/:provider` retornam registros reais do banco, com `id`, `createdAt` e `updatedAt` preenchidos.
+
 Status previstos:
 
 - `disabled`

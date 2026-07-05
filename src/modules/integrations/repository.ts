@@ -22,6 +22,8 @@ type IntegrationConfigRecord = {
 };
 
 export async function listIntegrationConfigs(): Promise<IntegrationConfigView[]> {
+  await seedDefaultIntegrationConfigs();
+
   const rows = (await prisma.integrationConfig.findMany({
     orderBy: {
       provider: "asc"
@@ -29,23 +31,28 @@ export async function listIntegrationConfigs(): Promise<IntegrationConfigView[]>
   })) as IntegrationConfigRecord[];
   const rowByProvider = new Map(rows.map((row) => [row.provider, row]));
 
-  return Object.keys(defaultIntegrationConfigs).map((provider) => {
-    const typedProvider = provider as IntegrationProvider;
-    const row = rowByProvider.get(typedProvider);
-    return row ? toIntegrationConfigView(row) : defaultIntegrationConfigView(typedProvider);
-  });
+  return Object.keys(defaultIntegrationConfigs)
+    .map((provider) => rowByProvider.get(provider as IntegrationProvider))
+    .filter((row): row is IntegrationConfigRecord => Boolean(row))
+    .map(toIntegrationConfigView);
 }
 
 export async function getIntegrationConfig(
   provider: IntegrationProvider
 ): Promise<IntegrationConfigView> {
+  await seedDefaultIntegrationConfigs();
+
   const row = (await prisma.integrationConfig.findUnique({
     where: {
       provider
     }
   })) as IntegrationConfigRecord | null;
 
-  return row ? toIntegrationConfigView(row) : defaultIntegrationConfigView(provider);
+  if (!row) {
+    throw new Error(`Integration config not found after seed: ${provider}`);
+  }
+
+  return toIntegrationConfigView(row);
 }
 
 export async function upsertIntegrationConfig(
@@ -87,6 +94,20 @@ export function getDefaultIntegrationConfigView(
   provider: IntegrationProvider
 ): IntegrationConfigView {
   return defaultIntegrationConfigView(provider);
+}
+
+async function seedDefaultIntegrationConfigs() {
+  await prisma.integrationConfig.createMany({
+    data: Object.entries(defaultIntegrationConfigs).map(([provider, defaults]) => ({
+      provider: provider as IntegrationProvider,
+      displayName: defaults.displayName,
+      status: defaults.status,
+      authType: defaults.authType,
+      credentialsJson: toPrismaJson({}),
+      settingsJson: toPrismaJson(defaults.settingsJson)
+    })),
+    skipDuplicates: true
+  });
 }
 
 function defaultIntegrationConfigView(provider: IntegrationProvider): IntegrationConfigView {
