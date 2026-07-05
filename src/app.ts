@@ -1,6 +1,7 @@
 import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
 import { env } from "./config/env";
+import { registerGoogleDriveRoutes } from "./integrations/googledrive/routes";
 import { registerIntegrationRoutes } from "./modules/integrations/routes";
 import { registerHealthRoutes } from "./routes/health";
 
@@ -21,6 +22,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   }));
 
   await app.register(registerHealthRoutes);
+  await app.register(registerGoogleDriveRoutes);
   await app.register(registerIntegrationRoutes);
 
   return app;

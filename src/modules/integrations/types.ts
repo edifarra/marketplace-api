@@ -9,7 +9,7 @@ export const integrationProviders = [
 
 export const integrationStatuses = ["disabled", "pending", "connected", "error"] as const;
 
-export const integrationAuthTypes = ["oauth", "api_key", "internal", "manual"] as const;
+export const integrationAuthTypes = ["oauth", "api_key", "internal", "manual", "service_account"] as const;
 
 export type IntegrationProvider = (typeof integrationProviders)[number];
 export type IntegrationStatus = (typeof integrationStatuses)[number];
@@ -83,7 +83,7 @@ export const defaultIntegrationConfigs: Record<
   googledrive: {
     displayName: "Google Drive",
     status: "pending",
-    authType: "oauth",
+    authType: "service_account",
     settingsJson: {}
   },
   cloudinary: {

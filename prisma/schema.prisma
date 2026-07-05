@@ -28,6 +28,7 @@ enum IntegrationAuthType {
   api_key
   internal
   manual
+  service_account
 }
 
 model IntegrationConfig {

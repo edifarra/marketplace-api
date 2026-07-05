@@ -112,6 +112,14 @@ As rotas do modulo sao:
 - `POST /integrations/:provider/test`
 - `PATCH /integrations/:provider`
 
+Rotas especificas do Google Drive:
+
+- `POST /integrations/googledrive/service-account/test`
+- `GET /integrations/googledrive/auth/start`
+- `GET /integrations/googledrive/auth/callback`
+- `GET /integrations/googledrive/status`
+- `POST /integrations/googledrive/test`
+
 `PATCH /integrations/:provider` permite atualizar `displayName`, `status`, `authType`, `settingsJson` e `credentialsJson`. O `provider` vem sempre da URL e nao pode ser alterado pelo corpo da requisicao.
 
 `GET /integrations/:provider/status` retorna uma visao consolidada e segura com:
@@ -238,12 +246,52 @@ O fluxo via Tiny nao substitui a capacidade de envio direto aos marketplaces.
 Uso previsto:
 
 - buscar fotos e produtos;
-- preferencialmente autenticar via OAuth do usuario;
+- autenticar prioritariamente via Service Account;
 - acessar o Drive real do usuario;
 - permitir leitura da pasta Root;
 - localizar arquivos conforme regras de nome e processo de produto.
 
-A Service Account pode existir como alternativa tecnica, mas o fluxo preferencial e OAuth do usuario.
+Historicamente, o processo de fotos depende de arquivos na pasta Root do Google Drive. O fluxo OAuth de usuario nao atendeu esse processo de forma confiavel nas validacoes anteriores. Por isso, a estrategia inicial preferencial e Service Account.
+
+Variaveis de ambiente:
+
+- `GOOGLE_SERVICE_ACCOUNT_JSON`
+- `GOOGLE_DRIVE_ROOT_FOLDER_ID` opcional
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI`
+
+`GOOGLE_SERVICE_ACCOUNT_JSON` deve conter o JSON da chave da Service Account. Ele tambem pode ser informado em Base64 para facilitar configuracao em ambientes de deploy.
+
+Quando `GOOGLE_DRIVE_ROOT_FOLDER_ID` estiver definido, `POST /integrations/googledrive/service-account/test` lista ate 10 arquivos dessa pasta. Quando nao estiver definido, a API tenta listar ate 10 arquivos acessiveis no Drive da propria Service Account.
+
+Para acessar pastas do Drive pessoal do usuario, a pasta precisa ser compartilhada com o e-mail da Service Account, salvo se houver outro mecanismo validado para aquele ambiente.
+
+Escopo inicial:
+
+```text
+https://www.googleapis.com/auth/drive.readonly
+```
+
+Fluxo inicial preferencial:
+
+1. Configurar `GOOGLE_SERVICE_ACCOUNT_JSON`.
+2. Opcionalmente configurar `GOOGLE_DRIVE_ROOT_FOLDER_ID`.
+3. Compartilhar a pasta do Drive pessoal com o e-mail da Service Account quando a pasta estiver no My Drive do usuario.
+4. Executar `POST /integrations/googledrive/service-account/test`.
+5. Se o teste funcionar, a API marca `googledrive` como `connected`, usa `authType` `service_account` e salva `rootFolderId` em `settingsJson` quando existir.
+
+Fluxo OAuth alternativo e experimental:
+
+1. `GET /integrations/googledrive/auth/start` redireciona para a URL OAuth do Google.
+2. O Google retorna para `GET /integrations/googledrive/auth/callback` com `code`.
+3. A API troca o `code` por tokens e salva em `IntegrationConfig.credentialsJson`.
+4. A integracao `googledrive` passa para `connected`.
+5. `POST /integrations/googledrive/test` valida acesso listando ate 5 arquivos do Drive na pasta Root.
+
+Tokens completos nunca sao retornados nas respostas publicas. As rotas retornam somente `hasCredentials` e `credentialKeys`.
+
+OAuth permanece disponivel como alternativa futura/experimental, mas nao e o caminho principal para o fluxo inicial de fotos.
 
 ## Cloudinary
 
